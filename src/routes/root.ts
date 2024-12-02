@@ -12,7 +12,7 @@ const uploadRoute = async (app: FastifyInstance) => {
     },
   });
 
-  app.post("/upload", async (request, reply) => {
+  app.post("/images", async (request, reply) => {
     const files = await request.file();
     const bucketName = process.env.BUCKET_NAME;
 
