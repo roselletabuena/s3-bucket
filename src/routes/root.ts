@@ -1,38 +1,51 @@
-import { FastifyPluginAsync } from "fastify";
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { dynamoConfig } from "../utils";
-import { Product } from "../models/productInterfaces";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { FastifyInstance } from "fastify";
+import fastifyMultipart from "fastify-multipart";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getAwsConfig } from "../utils";
 
-const client = new DynamoDBClient(dynamoConfig());
-const dynamodb = DynamoDBDocumentClient.from(client);
+const s3 = new S3Client(getAwsConfig());
 
-const root: FastifyPluginAsync = async (fastify, _): Promise<void> => {
-  fastify.get("/products", async function (_, reply) {
+const uploadRoute = async (app: FastifyInstance) => {
+  app.register(fastifyMultipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
+  });
+
+  app.post("/upload", async (request, reply) => {
+    const files = await request.file();
+    const bucketName = process.env.BUCKET_NAME;
+
+    if (!files || !bucketName) {
+      reply.status(400).send({ error: "Missing file or bucket configuration" });
+      return;
+    }
+
     try {
-      const command = new ScanCommand({
-        TableName: process.env.TABLE_NAME,
-      });
+      const file = await request.file();
 
-      const response = await dynamodb.send(command);
-      const products: Product[] = response.Items?.map((item) =>
-        unmarshall(item)
-      ) as Product[];
+      if (!file) {
+        reply.status(400).send({ error: "No file uploaded" });
+        return;
+      }
 
-      reply
-        .status(200)
-        .headers({
-          "Access-Control-Allow-Origin": "http://localhost:5173",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        })
-        .send({ products });
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      reply.status(500).send({ error: "Failed to fetch products" });
+      const fileContent = await file.toBuffer();
+
+      const uploadParams = {
+        Bucket: bucketName,
+        Key: file.filename,
+        Body: fileContent,
+        ContentType: file.mimetype,
+      };
+
+      const command = new PutObjectCommand(uploadParams);
+      const data = await s3.send(command);
+
+      reply.status(200).send({ message: "File uploaded successfully", data });
+    } catch (err) {
+      reply.status(500).send({ error: "File upload failed", details: err });
     }
   });
 };
 
-export default root;
+export default uploadRoute;

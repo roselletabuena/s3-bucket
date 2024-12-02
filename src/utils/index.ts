@@ -1,13 +1,17 @@
 import { fromIni } from "@aws-sdk/credential-provider-ini";
+import { S3ClientConfig } from "@aws-sdk/client-s3";
 
-export const dynamoConfig = (): object => {
-  console.log(process.env.ENVIRONMENT);
+interface AwsConfig extends S3ClientConfig {}
+
+export const getAwsConfig = (): AwsConfig => {
   if (process.env.ENVIRONMENT === "local") {
     return {
-      region: "us-east-1",
+      region: process.env.AWS_REGION,
       credentials: fromIni({ profile: process.env.PROFILE }),
     };
   }
 
-  return {};
+  return {
+    region: process.env.AWS_REGION,
+  };
 };
