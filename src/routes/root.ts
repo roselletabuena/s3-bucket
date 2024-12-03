@@ -13,10 +13,9 @@ const uploadRoute = async (app: FastifyInstance) => {
   });
 
   app.post("/images", async (request, reply) => {
-    const files = await request.file();
     const bucketName = process.env.BUCKET_NAME;
 
-    if (!files || !bucketName) {
+    if (!bucketName) {
       reply.status(400).send({ error: "Missing file or bucket configuration" });
       return;
     }
