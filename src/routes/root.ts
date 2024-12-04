@@ -1,11 +1,18 @@
 import { FastifyInstance } from "fastify";
 import fastifyMultipart from "fastify-multipart";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import fastifyCors from "@fastify/cors";
+
 import { getAwsConfig } from "../utils";
 
 const s3 = new S3Client(getAwsConfig());
 
 const uploadRoute = async (app: FastifyInstance) => {
+  app.register(fastifyCors, {
+    origin: "http://localhost:5173",
+    methods: ["POST", "OPTIONS"],
+  });
+
   app.register(fastifyMultipart, {
     limits: {
       fileSize: 10 * 1024 * 1024,
