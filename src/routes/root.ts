@@ -12,7 +12,7 @@ const uploadRoute = async (app: FastifyInstance) => {
     reply
       .headers({
         "Access-Control-Allow-Origin": setOriginValue(request),
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
       })
       .send();
@@ -36,7 +36,14 @@ const uploadRoute = async (app: FastifyInstance) => {
       const file = await request.file();
 
       if (!file) {
-        reply.status(400).send({ error: "No file uploaded" });
+        reply
+          .status(400)
+          .headers({
+            "Access-Control-Allow-Origin": setOriginValue(request),
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          })
+          .send({ error: "No file uploaded" });
         return;
       }
 
@@ -56,12 +63,19 @@ const uploadRoute = async (app: FastifyInstance) => {
         .status(200)
         .headers({
           "Access-Control-Allow-Origin": setOriginValue(request),
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
         })
         .send({ message: "File uploaded successfully", data });
     } catch (err) {
-      reply.status(500).send({ error: "File upload failed", details: err });
+      reply
+        .status(500)
+        .headers({
+          "Access-Control-Allow-Origin": setOriginValue(request),
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        })
+        .send({ error: "File upload failed", details: err });
     }
   });
 };
