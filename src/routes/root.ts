@@ -1,16 +1,21 @@
 import { FastifyInstance } from "fastify";
 import fastifyMultipart from "fastify-multipart";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import fastifyCors from "@fastify/cors";
+import { setOriginValue } from "../utils";
 
 import { getAwsConfig } from "../utils";
 
 const s3 = new S3Client(getAwsConfig());
 
 const uploadRoute = async (app: FastifyInstance) => {
-  app.register(fastifyCors, {
-    origin: "http://localhost:5173",
-    methods: ["POST", "OPTIONS"],
+  app.options("/*", async (request, reply) => {
+    reply
+      .headers({
+        "Access-Control-Allow-Origin": setOriginValue(request),
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      })
+      .send();
   });
 
   app.register(fastifyMultipart, {
@@ -47,7 +52,14 @@ const uploadRoute = async (app: FastifyInstance) => {
       const command = new PutObjectCommand(uploadParams);
       const data = await s3.send(command);
 
-      reply.status(200).send({ message: "File uploaded successfully", data });
+      reply
+        .status(200)
+        .headers({
+          "Access-Control-Allow-Origin": setOriginValue(request),
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        })
+        .send({ message: "File uploaded successfully", data });
     } catch (err) {
       reply.status(500).send({ error: "File upload failed", details: err });
     }
