@@ -24,11 +24,29 @@ const uploadRoute = async (app: FastifyInstance) => {
     },
   });
 
+  app.get("/images", async (request, reply) => {
+    reply
+      .status(200)
+      .headers({
+        "Access-Control-Allow-Origin": setOriginValue(request),
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      })
+      .send({ message: "Hello World!" });
+  });
+
   app.post("/images", async (request, reply) => {
     const bucketName = process.env.BUCKET_NAME;
 
     if (!bucketName) {
-      reply.status(400).send({ error: "Missing file or bucket configuration" });
+      reply
+        .status(400)
+        .headers({
+          "Access-Control-Allow-Origin": setOriginValue(request),
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        })
+        .send({ error: "Missing file or bucket configuration" });
       return;
     }
 
